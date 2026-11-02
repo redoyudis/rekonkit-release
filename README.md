@@ -82,7 +82,40 @@ rekonkit --version
 rekonkit --help
 ```
 
-There is no in-app updater. On Windows, run the newer setup; on Unix, rerun the Bash installer.
+## Update the CLI
+
+Available starting with the release containing this command (v0.3.4+):
+
+```text
+rekonkit update --check
+rekonkit update
+rekonkit update --yes
+rekonkit update --tag v1.0.0
+```
+
+- Default: check/install the **latest stable** public release, with confirmation. `--check` changes nothing and downloads no binary. `--yes` skips confirmation (and runs Windows setup silently). Noninteractive installation requires `--yes`.
+- `--tag` retrieves a specific newer tag; explicit prereleases are supported. Semantic version comparison prevents accidental downgrades, ignores build metadata, and refuses unversioned `dev` builds. Use manual setup/installation for a downgrade or an older CLI without this command.
+- Platforms: Linux/macOS amd64 and arm64; Windows amd64. Detection follows the running binary's architecture (including Rosetta), not a cross-architecture migration.
+- Downloads use the public GitHub Releases API without tokens. SHA256 is verified against the API's asset digest or `SHA256SUMS` from the same tagged release. HTTPS certificate validation remains enabled. This detects corruption, **not publisher compromise**; unsigned releases still need your organization's approval.
+- Network/download bounds: five minutes per request, 128 MiB per binary/archive and expanded archive, 1 MiB metadata/checksums. Requests honor standard proxy environment settings. Rate limits, timeouts, absent assets, invalid archives and checksum failures stop installation. Failed downloads are cleaned up.
+
+### Unix update limitations and recovery
+
+User-owned standalone installations are supported. Symlinks are resolved and preserved while their target is atomically replaced. The updater preserves mode and group, stages beside the target, verifies the downloaded CLI's reported version, and keeps a rollback hard link until the replacement passes verification. Downloads are staged beside the canonical installed executable, never through environment-controlled temporary paths. The installation directory chain must have trusted owners and no shared write access (sticky system temporary directories are allowed). Filesystems without hard links/working directory sync must use the manual installer.
+
+Package-managed paths (Homebrew, MacPorts, Nix, Snap, system `/usr/bin`, etc.), privileged executables, shared/unsafe directories and another user's files are refused. No sudo or privilege escalation is performed. Use the package manager or original administrator/installer instead. Projects, YAML and credentials are not touched.
+
+If replacement fails, the updater preserves/restores the previous executable when possible. **If rollback also fails**, the error prints the exact retained `previous` backup and installed target paths. Stop all installers, fix the underlying permissions/filesystem issue, and restore that backup through a same-directory staging file and rename, or reinstall a manually verified official binary. Keep the backup until `rekonkit version` succeeds. After a crash/power loss, inspect leftover `.rekonkit-update-*` / `.rekonkit-download-*` directories and `<executable>.update.lock` beside the target; remove only those updater artifacts after confirming no update is running. Do not delete your executable or unrelated directories.
+
+### Windows update limitations and recovery
+
+Automatic updates require the running `rekonkit.exe` to match the existing **per-user Inno Installed Apps registration**. Portable ZIP, legacy script, all-users, reparse-point/network/mapped-drive (including SUBST), removable-drive and shared-writable installs must update manually; the command never silently converts installation scope. Setup targets before v0.3.4 are refused because they lack the parent-process wait protocol.
+
+The verified setup is launched independently with the registered directory, no elevation, no automatic application closing/restarting, and no automatic reboot. It waits for the calling CLI to exit before installation. Other running RekonKit processes or security policy can still prevent replacement; close them yourself and retry. `--yes` uses silent setup, so inspect its log rather than expecting a wizard.
+
+**“Installer launched” means pending, not successful.** Run `rekonkit version` afterward. Downloads are staged beside the canonical registered executable, not in `%TEMP%`. Windows directory ownership/ACL checks reject unsafe ancestor permissions, and the staging directory is created with a protected DACL limited to the current user, SYSTEM and Administrators. The command prints the verified installer and `setup.log` paths in that temporary directory; retain them until setup finishes. On failure, inspect that log and rerun the verified setup manually after closing RekonKit, or download/verify the desired release's setup again. Once complete and no setup process is running, delete only the printed temporary updater directory. Project/configuration files are not installer-managed and are preserved.
+
+Manual Windows setup and the Unix Bash installer remain supported alternatives.
 
 ## Integrity and troubleshooting
 
