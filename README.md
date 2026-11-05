@@ -23,9 +23,9 @@ To upgrade, close running RekonKit processes and run the newer installer. It rep
 
 ### Existing legacy installation
 
-The previous script/local developer installer used `%LOCALAPPDATA%\rekonkit\bin`. Setup stops if that directory is still on user or system PATH, including an expanded `%LOCALAPPDATA%` entry. It never deletes legacy files or edits that PATH entry automatically because it has no ownership record.
+The previous script/local developer installer used `%LOCALAPPDATA%\rekonkit\bin`; the current installer uses `%LOCALAPPDATA%\Programs\Rekonkit`. If the old directory is on your **user** PATH, interactive setup asks permission to remove only matching PATH entries after installation. Approve only if other tools in that directory do not need them. It never deletes old files. A **system** PATH entry still requires administrator/IT assistance; setup never edits it.
 
-Close RekonKit, then use Windows **Environment Variables** settings to remove **only** that old directory from PATH; preserve every unrelated entry. A system PATH entry requires administrator/IT assistance. Retry setup, reopen your terminal, and check `Get-Command rekonkit -All` if the wrong version runs. An old binary outside PATH can be kept, or you may remove only the known old `rekonkit.exe` after verifying the new installation; do not delete directories containing other files. Other manually installed copies can still shadow the new command: inspect them before editing PATH.
+Alternatively, close RekonKit and remove **only** the old user PATH entry in Windows **Environment Variables** settings; preserve unrelated entries. Retry setup, reopen your terminal, and check `Get-Command rekonkit -All` if the wrong version runs. An old binary outside PATH can be kept, or you may remove only the known old `rekonkit.exe` after verifying the new installation; do not delete directories containing other files. Other manually installed copies can still shadow the new command: inspect them before editing PATH.
 
 ### Silent installation and uninstallation
 
@@ -36,7 +36,7 @@ start /wait "" rekonkit-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 start /wait "" "%LOCALAPPDATA%\Programs\Rekonkit\unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 ```
 
-Legacy PATH conflicts also fail silent installation; they are never silently removed. Add `/LOG="C:\path\setup.log"` for diagnostics. Use **Settings → Apps → Installed apps → Rekonkit → Uninstall** for interactive removal. Uninstall removes the application and only the PATH entry setup added. An equivalent PATH entry that already existed before installation belongs to you and is left unchanged. Unrelated PATH entries and project data remain intact. Reopen terminals afterward.
+Silent setup (including `rekonkit update --yes`) does not prompt for legacy PATH cleanup. After reviewing the old **user** PATH entry, explicitly add `/MIGRATELEGACYPATH=1` to the setup command to approve its removal; otherwise run setup interactively or remove it manually. This option never edits system PATH or deletes files. Add `/LOG="C:\path\setup.log"` for diagnostics. Use **Settings → Apps → Installed apps → Rekonkit → Uninstall** for interactive removal. Uninstall removes the application and only the PATH entry setup added. An equivalent PATH entry that already existed before installation belongs to you and is left unchanged. Unrelated PATH entries and project data remain intact. Reopen terminals afterward.
 
 ### Portable alternative
 
